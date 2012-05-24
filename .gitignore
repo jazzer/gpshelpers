@@ -1,3 +1,7 @@
+*.xml
+*.gpx
+
+
 *.py[co]
 
 # Packages
