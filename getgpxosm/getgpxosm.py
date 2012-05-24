@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
+# 2012, Johannes Mitlmeier, GPL
+# Benötigt wohl Python 2.7 unter Linux
 
-import urllib, sys, os, re, argparse
+import urllib, sys, os, re, argparse, subprocess
 
 dl_cache = set()
 def download(url, filename):
@@ -16,6 +18,8 @@ parser.add_argument('-ll, --latlon', dest="latlon", nargs=1, metavar="BOUNDING_B
 parser.add_argument('-w, --width', dest="width", nargs=1, metavar="INT", default="0.1", type=float, help='Breite/Höhe der unterteilten Bounding-Boxen')
 parser.add_argument('-d, --download', dest="download", action='store_true', help='Download der Rohdaten aktivieren')
 parser.add_argument('-e, --extract', dest="extract", action='store_true', help='Extraktion und Download der GPX-Dateien aktivieren')
+parser.add_argument('-r, --recombine', dest="recombine", action='store_true', help='GPX-Dateien zu einer großen Datei innerhalb der Bounding Box verbinden')
+parser.add_argument('-s, --split', dest="split", action='store_true', help='Datei in einzelne Tracks aufspalten (an Segment-Grenzen)')
 args = parser.parse_args()
 print args
 
@@ -76,6 +80,13 @@ if args.__dict__['extract']:
             # URLs herunterladen
             if not os.path.exists(filename): # kein Überschreiben
                 download(gpx_url, filename)
+                # tar.gz- oder gz-Archive auspacken
+                subprocess.call(["tar", "-zxf", filename], stderr=subprocess.PIPE)
 
 
 # TODO eventuell Tracks auslesen und croppen
+if args.__dict__['recombine']:
+    pass
+
+if args.__dict__['split']:
+    pass
