@@ -22,7 +22,7 @@ def download(url, filename):
 # Parameter parsen
 parser = argparse.ArgumentParser(description='Download von GPX-Traces über die OpenStreetMap-API.')
 parser.add_argument('-ll, --latlon', dest="latlon", nargs=1, metavar="BOUNDING_BOX", default="52.4852552,13.2603453,52.5643357,13.4181609", type=str, help='Bounding-Box im Format lat1,lon1,lat2,lon2')
-parser.add_argument('-w, --width', dest="width", nargs=1, metavar="INT", default="0.45", type=float, help='Breite/Höhe der unterteilten Bounding-Boxen')
+parser.add_argument('-w, --width', dest="width", nargs=1, metavar="FLOAT", default="0.45", type=float, help='Breite/Höhe der unterteilten Bounding-Boxen')
 parser.add_argument('-d, --download', dest="download", action='store_true', help='Download der Rohdaten aktivieren')
 parser.add_argument('-e, --extract', dest="extract", action='store_true', help='Extraktion und Download der GPX-Dateien aktivieren')
 parser.add_argument('-bb, --bounding-box', dest="boundingbox", action='store_true', help='GPX-Dateien auf Bounding Box (siehe Parameter -ll) beschränken')
@@ -39,19 +39,19 @@ if args.__dict__['download']:
 
     # Bounding-Box aufsplitten
     width = args.__dict__['width']
-    latlon = args.__dict__['latlon'][0].split(',')
+    latlon = args.__dict__['latlon'].split(',')
     lats = []
-    curr_lat = float(parts[0])
-    while curr_lat < float(parts[2]):
+    curr_lat = float(latlon[0])
+    while curr_lat < float(latlon[2]):
         lats.append(curr_lat)
         curr_lat += width
     lons = []
-    curr_lon = float(parts[1])
-    while curr_lon < float(parts[3]):
+    curr_lon = float(latlon[1])
+    while curr_lon < float(latlon[3]):
         lons.append(curr_lon)
         curr_lon += width
     
-    tiles = ["%s,%s,%s,%s" % (lat,lon,max(lat+width,parts[2]),max(lon+width,parts[3])) for lat in lats for lon in lons]
+    tiles = ["%s,%s,%s,%s" % (lon,lat,max(lon+width,latlon[3]),max(lat+width,latlon[2])) for lat in lats for lon in lons]
     
     output_counter = 0
     for tile in tiles:
