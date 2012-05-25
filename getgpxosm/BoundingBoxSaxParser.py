@@ -13,9 +13,7 @@ class BoundingBoxSaxParser(handler.ContentHandler):
     def __init__(self, folder, my_id, latlon):
         self.folder = folder
         self.my_id = my_id
-        self.latlon = latlon.split(',')
-        for i in range(len(self.latlon)):
-            self.latlon[i] = float(self.latlon[i])
+        self.latlon = [float(i) for i in latlon.split(',')]
         self.file_counter = 0
         self.out_doc = None
         self.level = 0

@@ -39,20 +39,25 @@ if args.__dict__['download']:
 
     # Bounding-Box aufsplitten
     width = args.__dict__['width']
-    latlon = args.__dict__['latlon'].split(',')
+    latlon = args.__dict__['latlon']
+    if not isinstance(latlon, basestring):
+        latlon = latlon[0]
+    latlon = [float(i) for i in latlon.split(',')]
     lats = []
-    curr_lat = float(latlon[0])
-    while curr_lat < float(latlon[2]):
+    curr_lat = latlon[0]
+    while curr_lat < latlon[2]:
         lats.append(curr_lat)
         curr_lat += width
     lons = []
-    curr_lon = float(latlon[1])
-    while curr_lon < float(latlon[3]):
+    curr_lon = latlon[1]
+    while curr_lon < latlon[3]:
         lons.append(curr_lon)
         curr_lon += width
     
-    tiles = ["%s,%s,%s,%s" % (lon,lat,max(lon+width,latlon[3]),max(lat+width,latlon[2])) for lat in lats for lon in lons]
-    
+    print lats
+    print lons
+    tiles = ["%f,%f,%f,%f" % (lon,lat,min(lon+width,latlon[3]),min(lat+width,latlon[2])) for lat in lats for lon in lons]
+
     output_counter = 0
     for tile in tiles:
         page = 0
@@ -65,7 +70,7 @@ if args.__dict__['download']:
             output_counter = output_counter + 1
             # Dateigröße prüfen
             if os.path.getsize(filename) < 131:
-                print "Datenseiten beendet. Dateigröße %s." % str(os.path.getsize(filename))
+                print "Datenseiten beendet. Dateigröße %d (%s)." % (os.path.getsize(filename), open(filename, 'rb').read())
                 os.remove(filename)
                 break
 
