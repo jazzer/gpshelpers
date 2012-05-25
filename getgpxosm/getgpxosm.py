@@ -1,9 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
-# 2012, Johannes Mitlmeier, GPL
-# Benötigt wohl Python 2.7 unter Linux
 
-import urllib, sys, os, re, argparse, subprocess
+# 2012, Johannes Mitlmeier, GPL
+# Benötigt wohl Python 2.7 unter Linux, xml-twig-tools zum Einrücken von XML
+
+
+import urllib, sys, os, re, argparse, subprocess, gc
+from xml.sax import make_parser, handler
+from BoundingBoxSaxParser import BoundingBoxSaxParser
+gc.enable()
+
 
 dl_cache = set()
 def download(url, filename):
@@ -12,16 +18,19 @@ def download(url, filename):
     urllib.urlretrieve(url, filename)
     dl_cache.add(url + "#" + filename)
 
+
 # Parameter parsen
 parser = argparse.ArgumentParser(description='Download von GPX-Traces über die OpenStreetMap-API.')
-parser.add_argument('-ll, --latlon', dest="latlon", nargs=1, metavar="BOUNDING_BOX", default="13.2817841,52.4982497,13.3363724,52.5275013", type=str, help='Bounding-Box im Format lat1,lon1,lat2,lon2')
-parser.add_argument('-w, --width', dest="width", nargs=1, metavar="INT", default="0.1", type=float, help='Breite/Höhe der unterteilten Bounding-Boxen')
+parser.add_argument('-ll, --latlon', dest="latlon", nargs=1, metavar="BOUNDING_BOX", default="52.4852552,13.2603453,52.5643357,13.4181609", type=str, help='Bounding-Box im Format lat1,lon1,lat2,lon2')
+parser.add_argument('-w, --width', dest="width", nargs=1, metavar="INT", default="0.45", type=float, help='Breite/Höhe der unterteilten Bounding-Boxen')
 parser.add_argument('-d, --download', dest="download", action='store_true', help='Download der Rohdaten aktivieren')
 parser.add_argument('-e, --extract', dest="extract", action='store_true', help='Extraktion und Download der GPX-Dateien aktivieren')
-parser.add_argument('-r, --recombine', dest="recombine", action='store_true', help='GPX-Dateien zu einer großen Datei innerhalb der Bounding Box verbinden')
-parser.add_argument('-s, --split', dest="split", action='store_true', help='Datei in einzelne Tracks aufspalten (an Segment-Grenzen)')
+parser.add_argument('-bb, --bounding-box', dest="boundingbox", action='store_true', help='GPX-Dateien auf Bounding Box (siehe Parameter -ll) beschränken')
+#parser.add_argument('-m, --merge', dest="merge", action='store_true', help='Einzelne GPX-Tracks zu einer Datei bündeln')
 args = parser.parse_args()
 print args
+
+
 
 # GET-Anfrage an API
 if args.__dict__['download']:
@@ -30,7 +39,7 @@ if args.__dict__['download']:
 
     # Bounding-Box aufsplitten
     width = args.__dict__['width']
-    parts = args.__dict__['latlon'][0].split(',')
+    latlon = args.__dict__['latlon'][0].split(',')
     lats = []
     curr_lat = float(parts[0])
     while curr_lat < float(parts[2]):
@@ -60,6 +69,7 @@ if args.__dict__['download']:
                 os.remove(filename)
                 break
 
+
 # XML einlesen
 # URLs extrahieren
 if args.__dict__['extract']:
@@ -81,12 +91,34 @@ if args.__dict__['extract']:
             if not os.path.exists(filename): # kein Überschreiben
                 download(gpx_url, filename)
                 # tar.gz- oder gz-Archive auspacken
-                subprocess.call(["tar", "-zxf", filename], stderr=subprocess.PIPE)
+                subprocess.call(["tar", "-zxf", filename, "GPX"], stderr=subprocess.PIPE)
 
 
-# TODO eventuell Tracks auslesen und croppen
-if args.__dict__['recombine']:
-    pass
 
-if args.__dict__['split']:
-    pass
+# Tracks splitten und croppen
+if args.__dict__['boundingbox']:
+    if not os.path.exists("output"):
+        os.makedirs("output")
+    
+    # GPX-Dateien lesen
+    folder = os.getcwd() + "/GPX/"
+    files = os.listdir(folder)
+    for filename in files:
+        #continue
+        if not filename.endswith('.gpx'):
+            continue
+        print "Verarbeite %s" % filename
+        my_id, ext = os.path.splitext(filename)
+        full_filename = folder + filename
+        parser = make_parser()
+        parser.setContentHandler(BoundingBoxSaxParser(os.getcwd() + '/output', my_id, args.__dict__['latlon']))
+        try:
+            parser.parse(full_filename)
+        except Exception:
+            print 'ERROR: Parse-Fehler'
+        gc.collect()
+
+
+# TODO implementieren?
+#if args.__dict__['merge']:
+#    pass
