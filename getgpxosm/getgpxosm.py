@@ -23,7 +23,7 @@ def download(url, filename):
 # Parameter parsen
 parser = argparse.ArgumentParser(description='Download von GPX-Traces über die OpenStreetMap-API.')
 parser.add_argument('-ll, --latlon', dest='latlon', nargs=1, metavar='BOUNDING_BOX', default=['52.4852552,13.2603453,52.5643357,13.4181609'], type=str, help='Bounding-Box im Format lat1,lon1,lat2,lon2')
-parser.add_argument('-w, --width', dest='width', nargs=1, metavar='FLOAT', default='0.45', type=float, help='Breite/Höhe der unterteilten Bounding-Boxen')
+parser.add_argument('-w, --width', dest='width', nargs=1, metavar='FLOAT', default=[0.45], type=float, help='Breite/Höhe der unterteilten Bounding-Boxen')
 parser.add_argument('-d, --download', dest='download', action='store_true', help='Download der Rohdaten aktivieren')
 parser.add_argument('-e, --extract', dest='extract', action='store_true', help='Extraktion und Download der GPX-Dateien aktivieren')
 parser.add_argument('-bb, --bounding-box', dest='boundingbox', action='store_true', help='GPX-Dateien auf Bounding Box (siehe Parameter -ll) beschränken')
@@ -39,7 +39,7 @@ if args.__dict__['download']:
         os.makedirs('API')
 
     # Bounding-Box aufsplitten
-    width = args.__dict__['width']
+    width = args.__dict__['width'][0]
     latlon = args.__dict__['latlon']
     latlon = [float(i) for i in latlon[0].split(',')]
     lats = []
