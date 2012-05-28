@@ -102,9 +102,17 @@ if args.__dict__['boundingbox']:
     if not os.path.exists('output'):
         os.makedirs('output')
     
+    # API-Dateien lesen
+    folder = os.getcwd() + '/API/'
+    files = os.listdir(folder)
+    for filename in files:
+        pass
+
     # GPX-Dateien lesen
     folder = os.getcwd() + '/GPX/'
     files = os.listdir(folder)
+    parser = make_parser()
+    my_parser = BoundingBoxSaxParser(os.getcwd() + '/output', '', args.__dict__['latlon'])
     for filename in files:
         #continue
         if not filename.endswith('.gpx'):
@@ -112,8 +120,8 @@ if args.__dict__['boundingbox']:
         print 'Verarbeite %s' % filename
         my_id, ext = os.path.splitext(filename)
         full_filename = folder + filename
-        parser = make_parser()
-        parser.setContentHandler(BoundingBoxSaxParser(os.getcwd() + '/output', my_id, args.__dict__['latlon']))
+        my_parser.my_id = my_id        
+        parser.setContentHandler(my_parser)
         try:
             parser.parse(full_filename)
         except Exception:
