@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
-# 2012, Johannes Mitlmeier, GPL
-# Benötigt wohl Python 2.7 unter Linux, gpsbabel zum Mergen
+# Copyright 2012, Johannes Mitlmeier, AGPLv3
+# Benötigt wohl mindestens Python 2.7 unter Linux, gpsbabel zum Mergen
 
 
 import urllib.request, urllib.parse, urllib.error, sys, os, re, argparse, subprocess, gc, codecs
 from xml.sax import make_parser, handler
 from xml.sax._exceptions import SAXParseException
 from BoundingBoxSaxParser import BoundingBoxSaxParser
+from multiprocessing import Pool
+
 gc.enable()
 
 
@@ -23,28 +25,32 @@ def download(url, filename):
 
 # Parameter parsen
 parser = argparse.ArgumentParser(description='Download von GPX-Traces über die OpenStreetMap-API.')
-parser.add_argument('-ll, --latlon', dest='latlon', nargs=1, metavar='BOUNDING_BOX', default=['52.4852552,13.2603453,52.5643357,13.4181609'], type=str, help='Bounding-Box im Format lat1,lon1,lat2,lon2')
-parser.add_argument('-w, --width', dest='width', nargs=1, metavar='FLOAT', default=[0.45], type=float, help='Breite/Höhe der unterteilten Bounding-Boxen')
-parser.add_argument('-d, --download', dest='download', action='store_true', help='Download der Rohdaten aktivieren')
-parser.add_argument('-e, --extract', dest='extract', action='store_true', help='Extraktion und Download der GPX-Dateien aktivieren')
-parser.add_argument('-u, --unzip', dest='unzip', action='store_true', help='Archive mit GPX-Dateien auspacken')
-parser.add_argument('-bb, --bounding-box', dest='boundingbox', action='store_true', help='GPX-Dateien auf Bounding Box (siehe Parameter -ll) beschränken')
-parser.add_argument('-s, --safety-border', dest='safety-border', nargs=1, metavar='FLOAT', default=[0.00], type=float, help='Randabstand zur Bounding-Box, um korrekt zu trennen')
-parser.add_argument('-m, --merge', dest='merge', action='store_true', help='Einzelne GPX-Tracks zu einer Datei bündeln')
+parser.add_argument('-ll', '--latlon', dest='latlon', nargs=1, metavar='BOUNDING_BOX', default=['52.4852552,13.2603453,52.5643357,13.4181609'], type=str, help='Bounding-Box im Format lat1,lon1,lat2,lon2')
+parser.add_argument('-w', '--width', dest='width', nargs=1, metavar='FLOAT', default=[0.45], type=float, help='Breite/Höhe der unterteilten Bounding-Boxen')
+parser.add_argument('-d', '--download', dest='download', action='store_true', help='Download der Rohdaten aktivieren')
+parser.add_argument('-e', '--extract', dest='extract', action='store_true', help='Extraktion und Download der GPX-Dateien aktivieren')
+parser.add_argument('-u', '--unzip', dest='unzip', action='store_true', help='Archive mit GPX-Dateien auspacken')
+parser.add_argument('-bb', '--bounding-box', dest='boundingbox', action='store_true', help='GPX-Dateien auf Bounding Box (siehe Parameter -ll) beschränken')
+parser.add_argument('-s', '--safety-border', dest='safety-border', nargs=1, metavar='FLOAT', default=[0.00], type=float, help='Randabstand zur Bounding-Box, um korrekt zu trennen')
+parser.add_argument('-m', '--merge', dest='merge', action='store_true', help='Einzelne GPX-Tracks zu einer Datei bündeln')
 args = parser.parse_args()
 print(args)
 
 
 
+if args.__dict__['latlon']:
+    latlon = args.__dict__['latlon']
+    latlon = [float(i) for i in latlon[0].split(',')]
+    latlon = [min(latlon[0], latlon[2]), min(latlon[1], latlon[3]), max(latlon[0], latlon[2]), max(latlon[1], latlon[3])]
+
 # GET-Anfrage an API
 if args.__dict__['download']:
+    print('Download')
     if not os.path.exists('API'):
         os.makedirs('API')
 
     # Bounding-Box aufsplitten
     width = args.__dict__['width'][0]
-    latlon = args.__dict__['latlon']
-    latlon = [float(i) for i in latlon[0].split(',')]
     lats = []
     curr_lat = latlon[0]
     while curr_lat < latlon[2]:
@@ -57,6 +63,7 @@ if args.__dict__['download']:
         curr_lon += width
     
     tiles = ['%f,%f,%f,%f' % (lon,lat,min(lon+width,latlon[3]),min(lat+width,latlon[2])) for lat in lats for lon in lons]
+    print('#Tiles: %d' % len(tiles))
 
     output_counter = 0
     for tile in tiles:
@@ -78,6 +85,7 @@ if args.__dict__['download']:
 # XML einlesen
 # URLs extrahieren
 if args.__dict__['extract']:
+    print('Extract')
     if not os.path.exists('GPX'):
         os.makedirs('GPX')
     folder = os.getcwd() + '/API/'
@@ -153,7 +161,7 @@ if args.__dict__['boundingbox']:
     folder = os.getcwd() + '/GPX/'
     files = os.listdir(folder)
     parser = make_parser()
-    my_parser = BoundingBoxSaxParser(args.__dict__['latlon'])
+    my_parser = BoundingBoxSaxParser(latlon)
     parser.setContentHandler(my_parser)
     for filename in files:
         if not filename.endswith('.gpx'):

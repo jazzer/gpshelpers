@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
-# 2012, Johannes Mitlmeier, GPL
-# Benötigt wohl Python 2.7 unter Linux
+# Copyright 2012, Johannes Mitlmeier, AGPLv3
+# Benötigt wohl mindestens Python 2.7 unter Linux
 
 
 import subprocess, os, re, codecs
@@ -10,7 +10,7 @@ from xml.sax import make_parser, handler
 
 class BoundingBoxSaxParser(handler.ContentHandler):
     def __init__(self, latlon):
-        self.latlon = [float(i) for i in latlon[0].split(',')]
+        self.latlon = latlon
         self.open_tags = set()
         self.open_source_tags = set()
         self.active = False
@@ -31,7 +31,7 @@ class BoundingBoxSaxParser(handler.ContentHandler):
 
 
     def close_file(self):
-        print('Trying to close file')
+        #print('Trying to close file')
         if self.out_doc is None:
             return
         # trk trkseg trkpt    
