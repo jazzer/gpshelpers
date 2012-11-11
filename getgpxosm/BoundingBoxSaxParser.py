@@ -52,7 +52,7 @@ class BoundingBoxSaxParser(handler.ContentHandler):
         self.out_doc = codecs.open(self.gen_filename, 'wb', 'utf-8')
         print('Schreibe Track in Datei %s' % (self.gen_filename))
         self.out_doc.write("""<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="getgpxosm aus Daten von OpenStreetMap">
+<gpx version="1.1" creator="getgpxosm from OpenStreetMap GPS data">
         """)
         self.level = 0
         self.point_counter = 0
@@ -98,10 +98,12 @@ class BoundingBoxSaxParser(handler.ContentHandler):
             self.active = False
             return
         if name == 'trk':
-            self.next_file()
-            self.active = True
+            #self.next_file()
+            pass
         elif name == 'trkseg':
-            return
+            self.next_file()
+            self.openTag('trk', None)
+            self.active = True
         elif name == 'trkpt':
             if not self.filter_urls or self.active:
                 if self.is_good_point(float(attrs['lat']), float(attrs['lon'])):
@@ -128,13 +130,12 @@ class BoundingBoxSaxParser(handler.ContentHandler):
             if not name == 'cmt':
                 return
                 
-        if name == 'trk':
+        if name == 'trk' and self.active:
             self.active = False
             self.close_file()
         elif name == 'trkseg':
             if 'trkseg' in self.open_tags:
-                self.closeTag('trkseg')
-                return           
+                self.close_file()
         elif name == 'trkpt':
             self.active = True            
 
