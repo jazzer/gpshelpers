@@ -7,6 +7,9 @@
 
 import subprocess, os, re, codecs
 from xml.sax import make_parser, handler
+import logging
+
+logging.basicConfig(level=logging.WARNING)
 
 class BoundingBoxSaxParser(handler.ContentHandler):
     def __init__(self, latlon):
@@ -33,7 +36,7 @@ class BoundingBoxSaxParser(handler.ContentHandler):
 
 
     def close_file(self):
-        print('Trying to close file')
+        logging.debug('Trying to close file')
         if self.out_doc is None:
             return
         # trk trkseg trkpt
@@ -46,7 +49,7 @@ class BoundingBoxSaxParser(handler.ContentHandler):
 
         # leer?
         if self.point_counter == 0:
-            print("removing file " + self.gen_filename)
+            logging.debug("removing file " + self.gen_filename)
             os.remove(self.gen_filename)
             self.file_counter -= 1
         else:
@@ -54,7 +57,7 @@ class BoundingBoxSaxParser(handler.ContentHandler):
         
     def next_file(self):
         self.file_counter += 1
-        print("new file no. " + str(self.file_counter))
+        logging.debug("new file no. " + str(self.file_counter))
         self.gen_filename = '%s/%s-%04d.gpx' % (self.folder, self.filename, self.file_counter)
         self.out_doc = codecs.open(self.gen_filename, 'wb', 'utf-8')
         self.out_doc.write("""<?xml version="1.0" encoding="UTF-8"?>
@@ -77,11 +80,11 @@ class BoundingBoxSaxParser(handler.ContentHandler):
         return True
         
     def openTag(self, name, attrs=None, autocall=False):
-        print("shall open tag " + name)
+        logging.debug("shall open tag " + name)
         if not self.do_output:
             return
         if name in self.open_tags:
-            print("tag already open: " + name + " > " + str(self.open_tags))
+            logging.debug("tag already open: " + name + " > " + str(self.open_tags))
             return
         if self.out_doc is None:
             self.next_file()
@@ -91,7 +94,7 @@ class BoundingBoxSaxParser(handler.ContentHandler):
             for i in range(index):
                 self.openTag(self.tag_order[i], autocall=True)
 
-        print("opening tag " + name)
+        logging.debug("opening tag " + name)
         try:
             self.out_doc.write('\n%s<%s' % ('\t'*self.level, name))
             if not attrs is None:
@@ -117,21 +120,16 @@ class BoundingBoxSaxParser(handler.ContentHandler):
 
     def startElement(self, name, attrs):
         self.open_source_tags.add(name)
-        #if not (name == 'time') and not (name == 'trkpt'):
-        #    print(name)
 
         if 'cmt' in self.open_source_tags:
             return
         if name == 'url' and self.filter_urls:
-            #print("filtering track")
             self.filter_this_track = True
-            #self.next_file()
             self.do_output = False
             return
         elif name == 'gpx':
             return
         elif name == 'trk':
-            #print("starting track")
             self.filter_this_track = False
             return
         elif name == 'trkpt':
@@ -139,17 +137,16 @@ class BoundingBoxSaxParser(handler.ContentHandler):
                 return
             else:
                 if self.is_good_point(float(attrs['lat']), float(attrs['lon'])):
-                    print("point is visible")
+                    logging.debug("point is visible")
                     self.point_counter += 1                
                     self.do_output = True
                 else:
-                    print("point is not visible")
+                    logging.debug("point is not visible")
                     self.do_output = False
                     if self.point_counter > 0:
                         self.close_file()
                     return
     
-        print("do_output (" + name + "): " + str(self.do_output))
         if self.do_output:
             self.openTag(name, attrs)
 
