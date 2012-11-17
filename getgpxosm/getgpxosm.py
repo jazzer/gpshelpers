@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 # Copyright 2012, Johannes Mitlmeier, AGPLv3
-# Benötigt wohl mindestens Python 2.7 unter Linux, gpsbabel zum Mergen
+# probably neeeds at least python 2.7 and linux for unzipping and merging
 
 
 import urllib.request, urllib.parse, urllib.error, sys, os, re, argparse, subprocess, gc, codecs
@@ -190,7 +190,7 @@ if args.__dict__['boundingbox']:
     my_parser.filter_urls = True
     my_parser.extra_border = args.__dict__['safety-border'][0]
     for filename in files:
-        if not filename.endswith('.xml'):
+        if not filename.endswith('page0000.xml'):
             continue
         print('Verarbeite %s' % filename)
         my_id, ext = os.path.splitext(filename)
